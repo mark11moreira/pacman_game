@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:pacman_game/ghost.dart';
 import 'package:pacman_game/path.dart';
 import 'package:pacman_game/pixel.dart';
 import 'package:pacman_game/player.dart';
@@ -120,10 +122,26 @@ class _HomePageState extends State<HomePage> {
     160,
   ];
 
+  List<int> food = [];
   String direction = "right";
+  bool preGame = true;
+  bool mouthClose = false;
+  int score = 0;
 
   void startGame() {
+    //   moveGhost();
+    preGame = false;
+    getFood();
     Timer.periodic(Duration(milliseconds: 150), (timer) {
+      setState(() {
+        mouthClose = !mouthClose;
+      });
+
+      if (food.contains(player)) {
+        food.remove(player);
+        score++;
+      }
+
       switch (direction) {
         case "left":
           movieLeft();
@@ -139,6 +157,14 @@ class _HomePageState extends State<HomePage> {
           break;
       }
     });
+  }
+
+  void getFood() {
+    for (int i = 0; i < numberOfSquares; i++) {
+      if (!barriers.contains(i)) {
+        food.add(i);
+      }
+    }
   }
 
   void movieLeft() {
@@ -166,7 +192,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void movieDown() {
-    if (!barriers.contains(player - numberInRow)) {
+    if (!barriers.contains(player + numberInRow)) {
       setState(() {
         player += numberInRow;
       });
@@ -205,7 +231,46 @@ class _HomePageState extends State<HomePage> {
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: numberInRow),
                     itemBuilder: (BuildContext contex, int index) {
-                      if (player == index) {
+                      if (mouthClose && player == index) {
+                        return Padding(
+                          padding: EdgeInsets.all(4),
+                          child: Container(
+                            decoration: BoxDecoration(
+                                color: Colors.yellow, shape: BoxShape.circle),
+                          ),
+                        );
+                      } else if (player == index) {
+                        switch (direction) {
+                          case "left":
+                            return Transform.rotate(
+                              angle: pi,
+                              child: MyPlayer(),
+                            );
+                            break;
+                            return Transform.rotate(
+                              angle: pi,
+                              child: MyPlayer(),
+                            );
+                          case "right":
+                            return MyPlayer();
+                            break;
+
+                          case "down":
+                            return Transform.rotate(
+                              angle: pi / 2,
+                              child: MyPlayer(),
+                            );
+                            break;
+
+                          case "up":
+                            return Transform.rotate(
+                              angle: 3 * pi / 2,
+                              child: MyPlayer(),
+                            );
+                            break;
+                          default:
+                            MyPlayer();
+                        }
                         return MyPlayer();
                       } else if (barriers.contains(index)) {
                         return MyPixel(
@@ -213,7 +278,7 @@ class _HomePageState extends State<HomePage> {
                           outColor: Colors.blue[900],
                           //  child: Text(index.toString()),
                         );
-                      } else {
+                      } else if (food.contains(index) || preGame) {
                         return MyPath(
                           innerColor: Colors.yellow,
                           outColor: Colors.black,
@@ -229,7 +294,7 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   Text(
-                    "Score: ",
+                    "Score: " + score.toString(),
                     style: TextStyle(color: Colors.white, fontSize: 35),
                   ),
                   GestureDetector(
